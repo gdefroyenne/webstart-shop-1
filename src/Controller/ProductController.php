@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\String\Slugger\AsciiSlugger;
 
 /**
  * @Route("/admin/product")
@@ -68,14 +69,18 @@ class ProductController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $imageFile = $this->get('imageFile')->getData();
+            /**
+             * @var File $imageFile
+             */
+            $imageFile = $form->get('imageFile')->getData();
 
             if ($imageFile) {
-                $safeFilename = uniqid() . $imageFile->guessExtension();
-                
+                $slugger = new AsciiSlugger();
+                $safeFilename = $slugger->slug($product->getName()) . "." . $imageFile->guessExtension();
+
                 try {
                     $imageFile->move(
-                        'public/img/products/',
+                        $this->getParameter('product_images_directory'),
                         $safeFilename
                     );
                 } catch (Exception $e) {
